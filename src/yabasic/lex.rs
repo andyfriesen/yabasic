@@ -45,6 +45,6 @@ named!(expr<&str, Token>,
     alt!(identifier | integer)
 );
 
-pub fn parse(s: &str) -> IResult<&str, Token> {
+pub fn lex(s: &str) -> IResult<&str, Token> {
     expr(s)
 }

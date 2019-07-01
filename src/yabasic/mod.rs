@@ -1,3 +1,3 @@
 
-pub mod parse;
-pub mod parse_tests;
+pub mod lex;
+pub mod lex_tests;
