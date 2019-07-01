@@ -12,20 +12,32 @@ pub type Int = i32;
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
     String(&'a str),
+    Keyword(Keyword),
     Integer(Int),
 }
+
+#[derive(Debug, PartialEq)]
+pub enum Keyword {
+    Print,
+}
+
+use Token::{String, Integer};
+use Keyword::*;
 
 named!(identifier<&str, Token>,
     map!(
         re_capture!("[a-zA-Z_][a-zA-Z0-9]*"),
-        |v| Token::String(v[0])
+        |v| match v[0] {
+            "print" => Token::Keyword(Print),
+            a => String(a)
+        }
     )
 );
 
 named!(integer<&str, Token>,
     map!(
         re_capture!("[0-9]+"),
-        |v| Token::Integer(v[0].parse().unwrap())
+        |v| Integer(v[0].parse().unwrap())
     )
 );
 
