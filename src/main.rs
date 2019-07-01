@@ -1,3 +1,8 @@
+extern crate nom;
+
+mod yabasic;
+
 fn main() {
-    println!("Hello, world!");
+    let res = yabasic::parse::parse("yo");
+    println!("Hello, world! {:?}", res);
 }
