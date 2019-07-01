@@ -1,36 +1,38 @@
-use std::string::String;
 
 use nom::{
     IResult,
-    do_parse,
-    named, one_of,
+    named,
     map,
-    take_while,
+    alt,
     re_capture,
 };
 
-const IDENTIFIER_START: &'static str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
-const IDENTIFIER_CHAR: &'static str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_0123456789";
+pub type Int = i32;
 
-fn is_identifier_char(c: char) -> bool {
-    IDENTIFIER_CHAR.find(c).is_some()
+#[derive(Debug, PartialEq)]
+pub enum Token<'a> {
+    String(&'a str),
+    Integer(Int),
 }
 
-fn combine((first, rest): (char, &str)) -> String {
-    let mut s = String::new();
-    s.reserve(s.len() + 1);
-    s.push(first);
-    s.push_str(rest);
-    s
-}
-
-named!(identifier<&str, &str>,
+named!(identifier<&str, Token>,
     map!(
         re_capture!("[a-zA-Z_][a-zA-Z0-9]*"),
-        |v| v[0]
+        |v| Token::String(v[0])
     )
 );
 
-pub fn parse(s: &str) -> IResult<&str, &str> {
-    identifier(s)
+named!(integer<&str, Token>,
+    map!(
+        re_capture!("[0-9]+"),
+        |v| Token::Integer(v[0].parse().unwrap())
+    )
+);
+
+named!(expr<&str, Token>,
+    alt!(identifier | integer)
+);
+
+pub fn parse(s: &str) -> IResult<&str, Token> {
+    expr(s)
 }
