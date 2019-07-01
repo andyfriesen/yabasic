@@ -1,10 +1,14 @@
 
+use std::vec::Vec;
+
 use nom::{
     IResult,
-    named,
-    map,
     alt,
+    many0,
+    map,
+    named,
     re_capture,
+    ws,
 };
 
 pub type Int = i32;
@@ -26,7 +30,7 @@ use Keyword::*;
 
 named!(identifier<&str, Token>,
     map!(
-        re_capture!("[a-zA-Z_][a-zA-Z0-9]*"),
+        re_capture!("[a-zA-Z_][a-zA-Z0-9_]*"),
         |v| match v[0] {
             "print" => Token::Keyword(Print),
             a => String(a)
@@ -41,10 +45,14 @@ named!(integer<&str, Token>,
     )
 );
 
-named!(expr<&str, Token>,
+named!(token<&str, Token>,
     alt!(identifier | integer)
 );
 
-pub fn lex(s: &str) -> IResult<&str, Token> {
-    expr(s)
+named!(tokens<&str, Vec<Token>>,
+    many0!(ws!(token))
+);
+
+pub fn lex(s: &str) -> IResult<&str, Vec<Token>> {
+    tokens(s)
 }

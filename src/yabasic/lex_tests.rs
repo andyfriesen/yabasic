@@ -6,20 +6,27 @@ mod parse_tests {
     fn identifier() {
         let (rest, res) = lex("yo").unwrap();
         assert_eq!(rest, "");
-        assert_eq!(res, Token::String("yo"));
+        assert_eq!(res, [Token::String("yo")]);
     }
 
     #[test]
     fn keyword() {
         let (rest, res) = lex("print").unwrap();
         assert_eq!(rest, "");
-        assert_eq!(res, Token::Keyword(Keyword::Print));
+        assert_eq!(res, [Token::Keyword(Keyword::Print)]);
     }
 
     #[test]
     fn integer() {
         let (rest, res) = lex("8675309").unwrap();
         assert_eq!(rest, "");
-        assert_eq!(res, Token::Integer(8675309));
+        assert_eq!(res, [Token::Integer(8675309)]);
+    }
+
+    #[test]
+    fn multiple_tokens() {
+        let (rest, res) = lex(" print   hello_world ").unwrap();
+        assert_eq!(rest, "");
+        assert_eq!(res, [Token::Keyword(Keyword::Print), Token::String("hello_world")]);
     }
 }
