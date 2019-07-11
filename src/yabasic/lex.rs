@@ -12,16 +12,16 @@ use nom::{
     re_capture,
 };
 
-pub type Int = i32;
+pub type Int = i64;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token<'a> {
     String(&'a str),
     Keyword(Keyword),
     Integer(Int),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Keyword {
     Print,
 }
