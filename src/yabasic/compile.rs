@@ -47,7 +47,7 @@ impl<'a> Compiler<'a> {
     }
 
     fn peek(&self) -> Option<Token<'a>> {
-        if self.pos >= self.tokens.len() {
+        if self.eof() {
             None
         } else {
             Some(self.tokens[self.pos].clone())
