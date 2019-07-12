@@ -1,13 +1,7 @@
 
-use crate::yabasic::lex;
 use crate::yabasic::lex::Token;
-use std::slice::Iter;
 use std::string::String;
 use std::collections::HashMap;
-
-pub struct Program {
-
-}
 
 pub type Offset = usize;
 type SrcOffset = usize;
@@ -52,13 +46,12 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn peek(&self) -> Option<Token> {
-        // if self.pos < self.tokens.len() {
-        //     None
-        // } else {
-        //     Some(self.tokens[self.pos].clone())
-        // }
-        None
+    fn peek(&self) -> Option<Token<'a>> {
+        if self.pos >= self.tokens.len() {
+            None
+        } else {
+            Some(self.tokens[self.pos].clone())
+        }
     }
 
     fn statement(&mut self) -> Result<(), CompileError> {
