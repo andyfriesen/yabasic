@@ -1,5 +1,6 @@
 
 use crate::yabasic::lex::Token;
+use crate::yabasic::lex::Keyword;
 use std::string::String;
 use std::collections::HashMap;
 
@@ -12,8 +13,24 @@ pub enum Label {
     Name(String),
 }
 
-struct Compiler<'a> {
-    bytecode: Vec<u32>,
+#[derive(Debug)]
+pub struct Bytecode {
+    pub ops: Vec<Op>,
+}
+
+impl Bytecode {
+    fn len(&self) -> usize {
+        self.ops.len()
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Op {
+    Print = 0x01,
+}
+
+pub struct Compiler<'a> {
+    bytecode: Bytecode,
     labels: HashMap<Label, Offset>,
     label_uses: Vec<(u32, Label)>, // Positions where labels are referred to.  We'll fill in the real offsets in a second pass.
 
@@ -28,6 +45,16 @@ enum CompileError {
 use CompileError::*;
 
 impl<'a> Compiler<'a> {
+    fn new(tokens: Vec<Token<'a>>) -> Compiler<'a> {
+        Compiler {
+            tokens: tokens,
+            bytecode: Bytecode { ops: Vec::new() },
+            labels: HashMap::new(),
+            label_uses: Vec::new(),
+            pos: 0,
+        }
+    }
+
     fn pos(&self) -> Offset {
         self.bytecode.len()
     }
@@ -54,6 +81,10 @@ impl<'a> Compiler<'a> {
         }
     }
 
+    fn emit(&mut self, op: Op) {
+        self.bytecode.ops.push(op);
+    }
+
     fn statement(&mut self) -> Result<(), CompileError> {
         let tok = if let Some(t) = self.peek() {
             t.clone()
@@ -78,6 +109,10 @@ impl<'a> Compiler<'a> {
     fn statement_no_line_num(&mut self) -> Result<(), CompileError> {
         if let Some(tok) = self.next() {
             match tok {
+                Token::Keyword(Keyword::Print) => {
+                    self.emit(Op::Print);
+                    Ok(())
+                },
                 _ => Ok(())
             }
         } else {
@@ -86,17 +121,12 @@ impl<'a> Compiler<'a> {
     }
 }
 
-pub fn compile(tokens: Vec<Token>) {
-    let mut c = Compiler {
-        tokens: tokens,
-        bytecode: Vec::new(),
-        labels: HashMap::new(),
-        label_uses: Vec::new(),
-        pos: 0,
-    };
-
+pub fn compile(tokens: Vec<Token>) -> Bytecode {
+    let mut c = Compiler::new(tokens);
     loop {
         let done = c.statement();
         if let Err(EOF) = done { break }
     }
+
+    c.bytecode
 }

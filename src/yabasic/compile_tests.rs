@@ -5,6 +5,8 @@ mod compile_tests {
 
     #[test]
     fn hello() {
-        compile(vec!());
+        let (_, tokens) = lex("10 print").unwrap();
+        let bytecode = compile(tokens);
+        assert_eq!(vec!(Op::Print), bytecode.ops);
     }
 }
