@@ -17,8 +17,11 @@ pub type Int = i64;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token<'a> {
     String(&'a str),
+    Identifier(&'a str),
     Keyword(Keyword),
     Integer(Int),
+    Newline,
+    Colon,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -26,11 +29,24 @@ pub enum Keyword {
     Print,
 }
 
-use Token::{String, Integer};
+use Token::{Identifier, Integer};
 use Keyword::*;
 
 named!(pub space<&str, Vec<&str>>,
-    re_capture!("^[\r\n\t ]*")
+    re_capture!("^[\t ]*")
+);
+
+named!(newline<&str, Token>,
+    do_parse!(
+        re_capture!("^[\n\r]") >>
+        (Token::Newline)
+    )
+);
+
+named!(colon<&str, Token>,
+    do_parse!(
+        re_capture!("^:") >> (Token::Colon)
+    )
 );
 
 named!(identifier<&str, Token>,
@@ -38,8 +54,15 @@ named!(identifier<&str, Token>,
         re_capture!("^[a-zA-Z_][a-zA-Z0-9_]*"),
         |v| match v[0] {
             "print" => Token::Keyword(Print),
-            a => String(a)
+            a => Identifier(a)
         }
+    )
+);
+
+named!(string<&str, Token>,
+    map!(
+        re_capture!("^\"[^\"]*\""),
+        |v| Token::String(v[0])
     )
 );
 
@@ -57,7 +80,7 @@ named!(pub comment<&str, Vec<&str>>,
 named!(token<&str, Token>,
     do_parse!(
         space >>
-        p: alt!(identifier | integer) >>
+        p: alt!(identifier | integer | string | colon | newline) >>
         space >>
         opt!(comment) >>
         (p)

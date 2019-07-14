@@ -16,17 +16,29 @@ pub enum Label {
 #[derive(Debug)]
 pub struct Bytecode {
     pub ops: Vec<Op>,
+    pub strings: Vec<String>,
 }
 
 impl Bytecode {
+    fn new() -> Bytecode {
+        Bytecode {
+            ops: Vec::new(),
+            strings: Vec::new(),
+        }
+    }
+
     fn len(&self) -> usize {
         self.ops.len()
     }
 }
 
+#[derive(Debug, PartialEq, PartialOrd)]
+pub struct StringIndex(pub u16);
+
 #[derive(Debug, PartialEq)]
 pub enum Op {
-    Print = 0x01,
+    Print,
+    PushStr(StringIndex),
 }
 
 pub struct Compiler<'a> {
@@ -38,8 +50,10 @@ pub struct Compiler<'a> {
     pos: SrcOffset, // current offset into the token stream
 }
 
-enum CompileError {
+#[derive(Debug)]
+pub enum CompileError {
     EOF,
+    UnexpectedEOF,
 }
 
 use CompileError::*;
@@ -48,7 +62,7 @@ impl<'a> Compiler<'a> {
     fn new(tokens: Vec<Token<'a>>) -> Compiler<'a> {
         Compiler {
             tokens: tokens,
-            bytecode: Bytecode { ops: Vec::new() },
+            bytecode: Bytecode::new(),
             labels: HashMap::new(),
             label_uses: Vec::new(),
             pos: 0,
@@ -63,7 +77,7 @@ impl<'a> Compiler<'a> {
         self.pos >= self.tokens.len()
     }
 
-    fn next(&mut self) -> Option<&Token> {
+    fn next(&mut self) -> Option<&Token<'a>> {
         if self.eof() {
             None
         } else {
@@ -73,11 +87,11 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn peek(&self) -> Option<Token<'a>> {
+    fn peek(&self) -> Option<&Token<'a>> {
         if self.eof() {
             None
         } else {
-            Some(self.tokens[self.pos].clone())
+            Some(&self.tokens[self.pos])
         }
     }
 
@@ -108,25 +122,70 @@ impl<'a> Compiler<'a> {
 
     fn statement_no_line_num(&mut self) -> Result<(), CompileError> {
         if let Some(tok) = self.next() {
+            println!("hoh {:?}", tok);
             match tok {
                 Token::Keyword(Keyword::Print) => {
+                    println!("peek {:?}", self.peek());
+                    match self.peek() {
+                        None => (),
+                        Some(Token::Newline) => (),
+                        o => {
+                            println!("wow {:?}", o);
+                            self.expr()?
+                        }
+                    }
                     self.emit(Op::Print);
                     Ok(())
                 },
                 _ => Ok(())
             }
         } else {
-            Err(EOF)
+            Ok(())
+        }
+    }
+
+    fn add_string(&mut self, s: String) -> StringIndex {
+        let res = self.bytecode.strings
+            .iter()
+            .enumerate()
+            .find(|(_i, st)| **st == s);
+
+        match res {
+            Some((i, _)) =>
+                StringIndex(i as u16),
+            None => {
+                assert!(self.bytecode.strings.len() < u16::max_value() as usize - 1);
+
+                let res = StringIndex(self.bytecode.strings.len() as u16);
+                self.bytecode.strings.push(s.into());
+                res
+            }
+        }
+    }
+
+    fn expr(&mut self) -> Result<(), CompileError> {
+        match self.next() {
+            None => Err(UnexpectedEOF),
+            Some(Token::String(s)) => {
+                let s = String::from(*s);
+                let index = self.add_string(s);
+                self.emit(Op::PushStr(index));
+                Ok(())
+            },
+            o => {
+                println!("bluh {:?}", o);
+                Ok(())
+            }
         }
     }
 }
 
-pub fn compile(tokens: Vec<Token>) -> Bytecode {
+pub fn compile(tokens: Vec<Token>) -> Result<Bytecode, CompileError> {
     let mut c = Compiler::new(tokens);
     loop {
-        let done = c.statement();
-        if let Err(EOF) = done { break }
+        c.statement()?;
+        if c.eof() { break }
     }
 
-    c.bytecode
+    Ok(c.bytecode)
 }

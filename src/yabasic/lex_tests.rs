@@ -6,7 +6,7 @@ mod parse_tests {
     fn identifier_() {
         let (rest, res) = lex("yo").unwrap();
         assert_eq!(rest, "");
-        assert_eq!(res, [Token::String("yo")]);
+        assert_eq!(res, [Token::Identifier("yo")]);
     }
 
     #[test]
@@ -26,7 +26,7 @@ mod parse_tests {
     #[test]
     fn multiple_tokens() {
         let (rest, res) = lex(" print   hello_world ").unwrap();
-        assert_eq!(res, [Token::Keyword(Keyword::Print), Token::String("hello_world")]);
+        assert_eq!(res, [Token::Keyword(Keyword::Print), Token::Identifier("hello_world")]);
         assert_eq!(rest, "");
     }
 
@@ -41,7 +41,15 @@ mod parse_tests {
     fn comments_between_tokens() {
         let (rest, res) = lex("print\nfoo\n' a totally useful comment\nprint bar").unwrap();
 
-        assert_eq!(res, [Token::Keyword(Keyword::Print), Token::String("foo"), Token::Keyword(Keyword::Print), Token::String("bar")]);
+        assert_eq!(res, [
+            Token::Keyword(Keyword::Print),
+            Token::Newline,
+            Token::Identifier("foo"),
+            Token::Newline,
+            Token::Newline,
+            Token::Keyword(Keyword::Print),
+            Token::Identifier("bar")
+        ]);
         assert_eq!(rest, "");
     }
 
@@ -49,5 +57,16 @@ mod parse_tests {
     fn space_() {
         assert!(space("").is_ok());
         assert!(space(" ").is_ok());
+    }
+
+    #[test]
+    fn string_literals() {
+        let (rest, res) = lex("print \"Hello World!\"").unwrap();
+
+        assert_eq!(res, [
+            Token::Keyword(Keyword::Print),
+            Token::String("\"Hello World!\""),
+        ]);
+        assert_eq!(rest, "");
     }
 }
