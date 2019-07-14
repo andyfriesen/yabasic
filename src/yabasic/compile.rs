@@ -122,17 +122,12 @@ impl<'a> Compiler<'a> {
 
     fn statement_no_line_num(&mut self) -> Result<(), CompileError> {
         if let Some(tok) = self.next() {
-            println!("hoh {:?}", tok);
             match tok {
                 Token::Keyword(Keyword::Print) => {
-                    println!("peek {:?}", self.peek());
                     match self.peek() {
                         None => (),
                         Some(Token::Newline) => (),
-                        o => {
-                            println!("wow {:?}", o);
-                            self.expr()?
-                        }
+                        _ => self.expr()?
                     }
                     self.emit(Op::Print);
                     Ok(())
@@ -172,10 +167,7 @@ impl<'a> Compiler<'a> {
                 self.emit(Op::PushStr(index));
                 Ok(())
             },
-            o => {
-                println!("bluh {:?}", o);
-                Ok(())
-            }
+            _ => Ok(())
         }
     }
 }
